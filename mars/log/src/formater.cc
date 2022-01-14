@@ -72,39 +72,12 @@ void log_formater(const XLoggerInfo* _info, const char* _logbody, PtrBuffer& _lo
     }
 
     if (NULL != _info) {
-        const char* filename = ExtractFileName(_info->filename);
-
-#if _WIN32
-        char strFuncName [128] = {0};
-        ExtractFunctionName(_info->func_name, strFuncName, sizeof(strFuncName));
-#else
-        const char* strFuncName = NULL == _info->func_name ? "" : _info->func_name;
-#endif
-
-        char temp_time[64] = {0};
-
-        if (0 != _info->timeval.tv_sec) {
-            time_t sec = _info->timeval.tv_sec;
-            tm tm = *localtime((const time_t*)&sec);
-
-
-#ifdef ANDROID
-            snprintf(temp_time, sizeof(temp_time), "%d-%02d-%02d %+.1f %02d:%02d:%02d.%.3ld", 1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
-                     tm.tm_gmtoff / 3600.0, tm.tm_hour, tm.tm_min, tm.tm_sec, _info->timeval.tv_usec / 1000);
-#elif _WIN32
-            snprintf(temp_time, sizeof(temp_time), "%d-%02d-%02d %+.1f %02d:%02d:%02d.%.3d", 1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
-                     (-_timezone) / 3600.0, tm.tm_hour, tm.tm_min, tm.tm_sec, _info->timeval.tv_usec / 1000);
-#else
-            snprintf(temp_time, sizeof(temp_time), "%d-%02d-%02d %+.1f %02d:%02d:%02d.%.3d", 1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday,
-                     tm.tm_gmtoff / 3600.0, tm.tm_hour, tm.tm_min, tm.tm_sec, _info->timeval.tv_usec / 1000);
-#endif
-        }
-
         // _log.AllocWrite(30*1024, false);
-        int ret = snprintf((char*)_log.PosPtr(), 1024, "[%s][%s][%" PRIdMAX ", %" PRIdMAX "%s][%s][%s:%d, %s][",  // **CPPLINT SKIP**
-                           _logbody ? levelStrings[_info->level] : levelStrings[kLevelFatal], temp_time,
-                           _info->pid, _info->tid, _info->tid == _info->maintid ? "*" : "", _info->tag ? _info->tag : "",
-                           filename, _info->line, strFuncName);
+        //第四个[]作为预留的扩展位，可能用于统一添加线程ID等属性,里面的内容格式是key1=xxx&key2=xxx&key3=xxx
+        int ret = snprintf((char*)_log.PosPtr(), 1024, "%s][%s][%s][][",  // **CPPLINT SKIP**
+                            _info->func_name,//XLoggerInfo结构关联的文件太多了，借用func_name字段传输时间戳
+                           _logbody ? levelStrings[_info->level] : levelStrings[kLevelFatal],
+                           _info->tag ? _info->tag : "");
 
         assert(0 <= ret);
         _log.Length(_log.Pos() + ret, _log.Length() + ret);
@@ -115,7 +88,8 @@ void log_formater(const XLoggerInfo* _info, const char* _logbody, PtrBuffer& _lo
 
     if (NULL != _logbody) {
         // in android 64bit, in strnlen memchr,  const unsigned char*  end = p + n;  > 4G!!!!! in stack array
-
+        //todo 这里的 130 是指什么？
+        //0xFFFFU 指4k
         size_t bodylen =  _log.MaxLength() - _log.Length() > 130 ? _log.MaxLength() - _log.Length() - 130 : 0;
         bodylen = bodylen > 0xFFFFU ? 0xFFFFU : bodylen;
         bodylen = strnlen(_logbody, bodylen);

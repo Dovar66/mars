@@ -37,6 +37,7 @@ enum TAppenderMode
 enum TCompressMode{
     kZlib,
     kZstd,
+    kNone,
 };
 
 struct XLogConfig{
