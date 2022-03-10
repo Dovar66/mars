@@ -118,8 +118,12 @@ def build_android(incremental, arch, target_option=''):
 
 
     for f in glob.glob(ANDROID_LIBS_INSTALL_PATH + "*.so"):
-        shutil.copy(f, symbol_path)
-        shutil.copy(f, lib_path)
+        if(f.find("libmarsxlog.so")!=-1):
+                shutil.copy(f, symbol_path + "/libzplog.so")
+                shutil.copy(f, lib_path + "/libzplog.so")
+        else:
+                shutil.copy(f, symbol_path)
+                shutil.copy(f, lib_path)
 
     # copy stl
     shutil.copy(ANDROID_STL_FILE[arch], symbol_path)
