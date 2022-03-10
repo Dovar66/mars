@@ -223,12 +223,6 @@ void XloggerAppender::FlushSync() {
 void XloggerAppender::Close() {
     if (log_close_) return;
 
-    char mark_info[512] = {0};
-    __GetMarkInfo(mark_info, sizeof(mark_info));
-    char appender_info[728] = {0};
-    snprintf(appender_info, sizeof(appender_info), "$$$$$$$$$$" __DATE__ "$$$" __TIME__ "$$$$$$$$$$%s\n", mark_info);
-    Write(nullptr, appender_info);
-
     log_close_ = true;
 
     cond_buffer_async_.notifyAll();
