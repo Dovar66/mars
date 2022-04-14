@@ -308,13 +308,8 @@ void XloggerAppender::Open(const XLogConfig& _config) {
     SetMode(config_.mode_);
     lock.unlock();
 
-    char mark_info[512] = {0};
-    __GetMarkInfo(mark_info, sizeof(mark_info));
-
     if (buffer.Ptr()) {
-        WriteTips2File("~~~~~ begin of mmap ~~~~~\n");
         __Log2File(buffer.Ptr(), buffer.Length(), false);
-        WriteTips2File("~~~~~ end of mmap ~~~~~%s\n", mark_info);
     }
 }
 
