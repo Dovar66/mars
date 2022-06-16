@@ -174,6 +174,16 @@ void SetMaxAliveTime(uintptr_t _instance_ptr, long _alive_seconds) {
     }
 }
 
+void CloseLogFile(uintptr_t _instance_ptr) {
+    if (0 == _instance_ptr) {
+       appender_close_log_file();
+    } else {
+        XloggerCategory* category  = reinterpret_cast<XloggerCategory*>(_instance_ptr);
+        XloggerAppender* appender = reinterpret_cast<XloggerAppender*>(category->GetAppender());
+        return appender->CloseLogFile();
+    }
+}
+
 }
 }
 

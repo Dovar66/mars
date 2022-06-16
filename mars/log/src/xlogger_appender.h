@@ -22,6 +22,7 @@ class XloggerAppender {
     void Flush();
     void FlushSync();
     void Close();
+    void CloseLogFile();
     void WriteTips2File(const char* _tips_format, ...);
     const char* Dump(const void* _dumpbuffer, size_t _len);
 

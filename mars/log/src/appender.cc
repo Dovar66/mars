@@ -255,15 +255,16 @@ void XloggerAppender::Open(const XLogConfig& _config) {
     ScopedLock dir_attr_lock(sg_mutex_dir_attr);
     if (!config_.cachedir_.empty()) {
         boost::filesystem::create_directories(config_.cachedir_);
-
-        Thread(boost::bind(&XloggerAppender::__DelTimeoutFile, this, config_.cachedir_)).start_after(2 * 60 * 1000);
+        //我们的场景下，cache文件几乎是固定的，就不要浪费线程去做这个事情了
+        //Thread(boost::bind(&XloggerAppender::__DelTimeoutFile, this, config_.cachedir_)).start_after(2 * 60 * 1000);
         Thread(boost::bind(&XloggerAppender::__MoveOldFiles, this, config_.cachedir_, config_.logdir_, config_.nameprefix_)).start_after(3 * 60 * 1000);
 #ifdef __APPLE__
         setAttrProtectionNone(config_.cachedir_.c_str());
 #endif
     }
 
-    Thread(boost::bind(&XloggerAppender::__DelTimeoutFile, this, config_.logdir_)).start_after(2 * 60 * 1000);
+    //当appender已经销毁时，max_alive_time_ 为野指针，删除逻辑里读取到的可能为0或其他值，导致整个目录被删除了，所以交给java层做这个事情。
+    //Thread(boost::bind(&XloggerAppender::__DelTimeoutFile, this, config_.logdir_)).start_after(2 * 60 * 1000);
     boost::filesystem::create_directories(config_.logdir_);
 #ifdef __APPLE__
     setAttrProtectionNone(config_.logdir_.c_str());
@@ -444,9 +445,9 @@ void XloggerAppender::__MakeLogFileName(const timeval& _tv,
 void XloggerAppender::__DelTimeoutFile(const std::string& _log_path) {
     ScopedLock dir_attr_lock(sg_mutex_dir_attr);
     time_t now_time = time(nullptr);
-    
+
     boost::filesystem::path path(_log_path);
-    
+
     if (boost::filesystem::exists(path) && boost::filesystem::is_directory(path)){
         boost::filesystem::directory_iterator end_iter;
         for (boost::filesystem::directory_iterator iter(path); iter != end_iter; ++iter) {
@@ -456,7 +457,7 @@ void XloggerAppender::__DelTimeoutFile(const std::string& _log_path) {
                 if(boost::filesystem::is_regular_file(iter->status())
                 && iter->path().extension() == (std::string(".") + LOG_EXT)) {
                     boost::filesystem::remove(iter->path());
-                } 
+                }
                 if (boost::filesystem::is_directory(iter->status())) {
                     std::string filename = iter->path().filename().string();
                     if (filename.size() == 8 && filename.find_first_not_of("0123456789") == std::string::npos) {
@@ -708,6 +709,10 @@ void XloggerAppender::__CloseLogFile() {
     openfiletime_ = 0;
     fclose(logfile_);
     logfile_ = nullptr;
+}
+
+void XloggerAppender::CloseLogFile() {
+    __CloseLogFile();
 }
 
 bool XloggerAppender::__CacheLogs() {
@@ -1149,6 +1154,13 @@ void appender_set_max_alive_duration(long _max_time) {
         return;
     }
     sg_default_appender->SetMaxAliveDuration(_max_time);
+}
+
+void appender_close_log_file() {
+    if (sg_release_guard) {
+        return;
+    }
+    sg_default_appender->CloseLogFile();
 }
 
 bool appender_getfilepath_from_timespan(int _timespan, const char* _prefix, std::vector<std::string>& _filepath_vec) {

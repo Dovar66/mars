@@ -62,6 +62,7 @@ void SetMaxFileSize(uintptr_t _instance_ptr, long _max_file_size);
 
 void SetMaxAliveTime(uintptr_t _instance_ptr, long _alive_seconds);
 
+void CloseLogFile(uintptr_t _instance_ptr);
 }
 }
 

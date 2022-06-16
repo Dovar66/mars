@@ -299,6 +299,13 @@ JNIEXPORT void JNICALL Java_com_badambiz_library_zplog_core_JniLog_setMaxAliveTi
     CHECK_LOG_INSTANCE(_log_instance_ptr);
     mars::xlog::SetMaxAliveTime(_log_instance_ptr, _max_time);
 }
+
+JNIEXPORT void JNICALL Java_com_badambiz_library_zplog_core_JniLog_closeLogFile
+  (JNIEnv *env, jobject, jlong _log_instance_ptr) {
+    CHECK_LOG_INSTANCE(_log_instance_ptr);
+    mars::xlog::CloseLogFile(_log_instance_ptr);
+}
+
 }
 
 void ExportXlog() {}
