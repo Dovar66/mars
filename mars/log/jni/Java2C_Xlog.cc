@@ -32,7 +32,7 @@
 #define LONGTHREADID2INT(a) ((a >> 32)^((a & 0xFFFF)))
 
 #define CHECK_LOG_INSTANCE(log_instance) \
-    if (log_instance < 0) return
+    if (log_instance == -1) return
 
 extern "C" {
 
@@ -266,7 +266,7 @@ JNIEXPORT void JNICALL Java_com_badambiz_library_zplog_core_JniLog_logWrite2
 
 JNIEXPORT jint JNICALL Java_com_badambiz_library_zplog_core_JniLog_getLogLevel
   (JNIEnv *, jobject, jlong _log_instance_ptr) {
-    if (_log_instance_ptr < 0) return kLevelNone;
+    if (_log_instance_ptr == -1) return kLevelNone;
     return mars::xlog::GetLevel(_log_instance_ptr);
 }
 
